@@ -101,21 +101,27 @@ const SideBarNav = () => {
   const [open, setOpen] = React.useState(false);
 
   const[menu,setMenu] = useState([]);
+  const[carrito,setCarrito] = useState([
+    {text:'comida1', icon:<InboxIcon />, cantidad:1}
+  ]);
 
   //esto se repite cada vez que cambia el tamaño de la imagen
   useEffect(() => {
-    let productos = axios.get(apiMethods.GET_PRODUCTOS_ALL);
-    console.log(productos);
-    //Rellenar 
-    var menu_prov = [
-        { id: 1, src: fantasy, title: 'Image 1' },
-        { id: 2, src: deku, title: 'Image 2' },
-        { id: 3, src: fantasy, title: 'Image 1' },
-        { id: 4, src: deku, title: 'Image 2' },
-        { id: 5, src: fantasy, title: 'Image 1' },
-        { id: 6, src: deku, title: 'Image 2' },
-    ]
-    setMenu(menu_prov)
+    if(menu.length < 1){
+
+      let productos = axios.get(apiMethods.GET_PRODUCTOS_ALL);
+      console.log(productos);
+      //Rellenar 
+      var menu_prov = [
+          { id: 1, src: fantasy, title: 'Image 1' },
+          { id: 2, src: deku, title: 'Image 2' },
+          { id: 3, src: fantasy, title: 'Image 1' },
+          { id: 4, src: deku, title: 'Image 2' },
+          { id: 5, src: fantasy, title: 'Image 1' },
+          { id: 6, src: deku, title: 'Image 2' },
+      ]
+      setMenu(menu_prov)
+    }
   });
 
   const handleDrawerOpen = () => {
@@ -125,6 +131,30 @@ const SideBarNav = () => {
   const handleDrawerClose = () => {
     setOpen(false);
   };
+
+  const handleAdd = () => {
+    var carrito_prov = []
+    var producto = [{text:'comida1', icon:<InboxIcon />, cantidad: 2},{text:'comida2', icon:<MailIcon />, cantidad: 2}]
+    var cambiado = false;
+
+    producto.map(producto_element => {
+      carrito.map(element => {
+        if(element.text == producto_element.text){
+          var cantidadTotal = element.cantidad + producto_element.cantidad
+          var row = {text:element.text, icon: element.icon, cantidad: cantidadTotal}
+          carrito_prov.push(row)
+          cambiado = true
+        }
+      })
+      if(!cambiado){
+        carrito_prov.push(producto_element)
+      }
+      cambiado = false
+    })
+    
+    console.log(carrito_prov)
+    setCarrito(carrito_prov)
+  }
 
   return (
     <>
@@ -250,8 +280,8 @@ const SideBarNav = () => {
             ))}
           </List>
           <List>
-            {["Producto 1", "Producto 2", "Producto 3"].map((text, index) => (
-              <ListItem key={text} disablePadding sx={{ display: "block" }}>
+            {carrito.map(element => (
+              <ListItem key={element.text} disablePadding sx={{ display: "block" }}>
                 <ListItemButton
                   sx={{
                     minHeight: 48,
@@ -266,9 +296,9 @@ const SideBarNav = () => {
                       justifyContent: "center",
                     }}
                   >
-                    {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                    {element.icon}
                   </ListItemIcon>
-                  <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
+                  <ListItemText primary={element.text} sx={{ opacity: open ? 1 : 0 }} />
                 </ListItemButton>
               </ListItem>
             ))}
@@ -278,7 +308,6 @@ const SideBarNav = () => {
           <DrawerHeader />
           <Typography paragraph>
             <h3>MEREQUENTEGUE PROMOCIONES</h3>
-            
             <Card sx={{ maxWidth: 345 }}>
             <CardActionArea>
                 <CardMedia
@@ -328,7 +357,7 @@ const SideBarNav = () => {
                         </CardContent>
                     </CardActionArea>
                     <CardActions>
-                        <Button size="small" color="primary">
+                        <Button size="small" color="primary" onClick={handleAdd}>
                             AGREGAR AL CARRITO
                         </Button>
                     </CardActions>
