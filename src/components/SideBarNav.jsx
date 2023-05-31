@@ -24,10 +24,7 @@ import { Button, CardActionArea, CardActions, Grid } from '@mui/material';
 
 import axios from "axios";
 import * as apiMethods from "../components/Apimethods.js";
-import fantasy from "../images/Fantasy.jpg";
-import deku from "../images/deku.gif";
-
-import Carousel from "../components/ImageGallery";
+import promociones from "../images/Promociones.png";
 
 const drawerWidth = 240;
 
@@ -109,18 +106,36 @@ const SideBarNav = () => {
   useEffect(() => {
     if(menu.length < 1){
 
-      let productos = axios.get(apiMethods.GET_PRODUCTOS_ALL);
-      console.log(productos);
-      //Rellenar 
-      var menu_prov = [
-          { id: 1, src: fantasy, title: 'Image 1' },
-          { id: 2, src: deku, title: 'Image 2' },
-          { id: 3, src: fantasy, title: 'Image 1' },
-          { id: 4, src: deku, title: 'Image 2' },
-          { id: 5, src: fantasy, title: 'Image 1' },
-          { id: 6, src: deku, title: 'Image 2' },
-      ]
-      setMenu(menu_prov)
+      let productos = []
+      var menu_prov = []
+
+      axios.get(apiMethods.GET_PRODUCTOS_ALL)
+        .then(response => {
+          productos = response.data;
+           // or do whatever you need with the data
+
+          productos.map(e => {
+            let row = {id: e.id, src: e.image, title:e.name, description: e.description, icon:<MailIcon />,cantidad:0}
+            menu_prov.push(row)
+          })
+          setMenu(menu_prov)
+
+          // Update the state or trigger other actions using the data
+
+        })
+        .catch(error => {
+          // Handle any errors that occur during the request
+          console.error('Error fetching products:', error);
+        });
+
+      /*menu_prov = [
+          { id: 1, src: fantasy, title: 'comida1', icon:<InboxIcon />, cantidad: 0},
+          { id: 2, src: deku, title: 'comida2', icon:<MailIcon />, cantidad: 0},
+          { id: 3, src: fantasy, title: 'comida3', icon:<InboxIcon />, cantidad: 0},
+          { id: 4, src: deku, title: 'comida4', icon:<InboxIcon />, cantidad: 0},
+      ]*/
+      //setMenu(menu_prov)
+      
     }
   });
 
@@ -132,28 +147,82 @@ const SideBarNav = () => {
     setOpen(false);
   };
 
-  const handleAdd = () => {
+  const handleAdd = (element) => {
     var carrito_prov = []
-    var producto = [{text:'comida1', icon:<InboxIcon />, cantidad: 2},{text:'comida2', icon:<MailIcon />, cantidad: 2}]
-    var cambiado = false;
+    var respuesta_prov = []
+    var producto = [{text:element.title, icon:element.icon, cantidad: element.cantidad + 2, cambiado:false}]
 
-    producto.map(producto_element => {
-      carrito.map(element => {
-        if(element.text == producto_element.text){
-          var cantidadTotal = element.cantidad + producto_element.cantidad
-          var row = {text:element.text, icon: element.icon, cantidad: cantidadTotal}
-          carrito_prov.push(row)
-          cambiado = true
-        }
+    console.log(carrito)
+
+    if(carrito.length > 0){
+
+      producto.map(producto_element => {
+        carrito.map(element => {
+
+          if(element.text == producto_element.text && !producto_element.cambiado){
+            var cantidadTotal = element.cantidad + producto_element.cantidad
+            var row = {text:producto_element.text, icon: producto_element.icon, cantidad: cantidadTotal}
+            carrito_prov.push(row)
+            console.log(carrito_prov.length)
+            console.log(carrito_prov)
+            producto_element.cambiado = true
+          }
+        })
       })
-      if(!cambiado){
-        carrito_prov.push(producto_element)
-      }
-      cambiado = false
-    })
+
+      console.log(carrito_prov.length)
+
+      carrito.map(element => {
+        if(carrito_prov.length > 0){
+          console.log("entre if")
+          carrito_prov.map(carrito_element => {
+            if(element.text == carrito_element.text){
+              respuesta_prov.push(carrito_element)
+            }else{
+              respuesta_prov.push(element)
+            }
+          })
+        }
+        else{
+          console.log("entre else")
+          respuesta_prov.push(element)
+        }
+        
+      })
+
+    }
+    else{
+      producto.map(producto_element => {
+        var row = {text:producto_element.text, icon: producto_element.icon, cantidad: producto_element.cantidad}
+        carrito_prov.push(row)
+      })
+      
+    }
     
-    console.log(carrito_prov)
-    setCarrito(carrito_prov)
+    
+    console.log(respuesta_prov)
+    setCarrito(respuesta_prov)
+  }
+
+  const handlePagos = () =>{
+    //hacer PUT A SANTIAGO utilizar
+    //apimethods.POST_ORDEN
+    //Pero sin productos y sin cantidades
+    //Update de orden con cantidades y productos
+  }
+
+  const handleMenuListItem = ( id ) =>{
+    if(id == 0){
+
+    }
+    else if(id == 1){
+
+    }
+    else if(id == 2){
+      window.sessionStorage.setItem('localToken', '');
+      window.sessionStorage.setItem('localSesion', false);
+      window.location.reload();
+    }
   }
 
   return (
@@ -233,6 +302,7 @@ const SideBarNav = () => {
                       justifyContent: open ? "initial" : "center",
                       px: 2.5,
                     }}
+                    onClick={() => handleMenuListItem(index)}
                   >
                     <ListItemIcon
                       sx={{
@@ -313,16 +383,15 @@ const SideBarNav = () => {
                 <CardMedia
                 component="img"
                 height="140"
-                image={fantasy}
-                alt="green iguana"
+                image={promociones}
+                alt="hamburguesa doble a mitad de precio"
                 />
                 <CardContent>
                 <Typography gutterBottom variant="h5" component="div">
-                    Lizard
+                    Por una Especial te llevas una SUPER Especial   
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Lizards are a widespread group of squamate reptiles, with over 6,000
-                    species, ranging across all continents except Antarctica
+                  Por comprar una hamburguesa especial te llevas una super especial {'(solo en esta promoción en linea)'} APROVECHA
                 </Typography>
                 </CardContent>
             </CardActionArea>
@@ -336,28 +405,27 @@ const SideBarNav = () => {
             <Divider />
             <h3>MEREQUENTEGUE PRODUCTOS</h3>
             <Grid container spacing={2}>
-            {menu.map((image) => (
-                <Grid item xs={12} sm={6} md={4} key={image.id}>
+            {menu.map(element => (
+                <Grid item xs={12} sm={6} md={4} key={element.id}>
                 <Card sx={{ maxWidth: 345 }}>
                     <CardActionArea>
                         <CardMedia
                         component="img"
                         height="200"
-                        image={image.src}
+                        image={element.src}
                         alt="green iguana"
                         />
                         <CardContent>
                         <Typography gutterBottom variant="h5" component="div">
-                            Lizard
+                            {element.title}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            Lizards are a widespread group of squamate reptiles, with over 6,000
-                            species, ranging across all continents except Antarctica
+                            {element.description}
                         </Typography>
                         </CardContent>
                     </CardActionArea>
                     <CardActions>
-                        <Button size="small" color="primary" onClick={handleAdd}>
+                        <Button size="small" color="primary" onClick={() => handleAdd(element)}>
                             AGREGAR AL CARRITO
                         </Button>
                     </CardActions>

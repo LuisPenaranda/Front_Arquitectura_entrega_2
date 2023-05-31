@@ -1,67 +1,126 @@
-import React, { useState } from "react";
-import {useForm} from "react-hook-form";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { Button } from "@mui/material";
+import { TextField } from "@mui/material";
+
+import { styled, useTheme } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import MuiAppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
 import { useNavigate } from "react-router-dom";
+
+
+import axios from "axios";
+import * as apiMethods from "../components/Apimethods.js";
 
 import "../css/InicioSesion.sass";
 
-const TextoClave = (props) =>  {
+const drawerWidth = 240;
 
-    const {claveHint,claveId,onClickFuncion} = props 
+const AppBar = styled(MuiAppBar, {
+    shouldForwardProp: (prop) => prop !== "open",
+  })(({ theme, open }) => ({
+    zIndex: theme.zIndex.drawer + 1,
+    transition: theme.transitions.create(["width", "margin"], {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen,
+    }),
+    ...(open && {
+      marginLeft: drawerWidth,
+      width: `calc(100% - ${drawerWidth}px)`,
+      transition: theme.transitions.create(["width", "margin"], {
+        easing: theme.transitions.easing.sharp,
+        duration: theme.transitions.duration.enteringScreen,
+      }),
+    }),
+  }));
 
-    const regexEmail = "([\w-\.]+@([\w-]+\.)+[\w-]{2,4})|([a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*)"
+const TextoClave = () => {
 
-    //const [email, setEmail] = useState("");
+    const theme = useTheme();
+    const [open, setOpen] = React.useState(false);
 
-    const { register, handleSubmit, formState: { errors } } = useForm();
-    const navigate = useNavigate(); // useNavigate hook for navigation
-    const onSubmit = data => {
-        console.log(data)
-        const encodedString = btoa(data.UserName + ':' + data.exampleRequired); 
-        console.log(encodedString)//GUARDAR ESTO EN GLOBAL COMO TOKEN y CAMBIAR ESTADO A INICIADO
-        //Autorizacion : Basic BASE64 => esto va en el header
-        navigate('/'); 
-    };
-    //<form onSubmit={handleSubmit(onSubmit)}>
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+      } = useForm();
+    
+      const navigate = useNavigate();
 
-    /*const handleSubmit = (event) => {
-        event.preventDefault();
-        alert(`The name you entered was: ${email}`)
-    }*/
+      const onSubmit = (data) => {
+        axios.post(apiMethods.AUTH_USUARIO, {username:data.username, password:data.password}).then(
+            response => {
+                const myString = response.data.username + ':' + response.data.password; // The string you want to convert to Base64
+                const base64EncodedString = btoa(myString);
+                window.sessionStorage.setItem('localToken', 'Basic ' + base64EncodedString);
+                window.sessionStorage.setItem('localSesion', true);
+                navigate("/");
+            }
+        )
+      };
 
-    return (
+  return (
     <>
-        <div id={"InicioSesion" + claveId}>
-            <form onSubmit={handleSubmit(onSubmit)}>
-                
-                <div className="InicioSesionUsuario" style={{border:''}}>
-                    <h2 for={claveId}>{claveHint}</h2>
-                    <input  {...register("UserName", {pattern:{regexEmail}}, { required: true }) }/>
-                    {errors.UserName && <span>This field is required</span>}
+        <AppBar position="fixed" open={open} >
+          <Toolbar style={{backgroundColor:'#ffffff'}}>
+            <Typography
+                variant="h6"
+                noWrap
+                component="div"
+                sx={{
+                    flexGrow: 1,
+                    display: { xs: "none", sm: "block", color: "#000000" },
+                    paddingLeft: "45%",  // Adjust the padding value to center the component
+                }}
+                >
+                <a href="/">LOGO PERRON</a>
+            </Typography>
 
-                    {/* register your input into the hook by invoking the "register" function */}
-                    {
-                    //<input defaultValue="test" {...register("example")} />
-                    }
-                </div>
+          </Toolbar>
+        </AppBar>
+        <div className="login-container">
+      <form className="login-form" onSubmit={handleSubmit(onSubmit)}>
+        <h2 className="login-title">INICIAR SESION</h2>
+        <div className="login-input">
+            <TextField
+                className="login-input"
+                label="Usuario"
+                {...register("username", { required: "Nombre de usuario requerido" })}
+                error={Boolean(errors.username)}
+                helperText={errors.username && errors.username.message}
+            />
+        </div>
+        
+        <div className="login-input">
+            <TextField
+                className="login-input"
+                label="Contraseña"
+                type="password"
+                {...register("password", { required: "Password is required" })}
+                error={Boolean(errors.password)}
+                helperText={errors.password && errors.password.message}
+            />
+        </div>
+        
+        <div className="login-submit-btn">
+            <Button
+                variant="contained"
+                color="primary"
+                type="submit"
+            >
+                Iniciar Sesion
+            </Button>
+        </div>
+        <div className="register-link">
+            <a href="/registrarse">Registrarse</a>
+        </div>
 
-                <div className="InicioSesionClave">
-                    <h2 for={claveId + "l"}>{claveHint}</h2>
-                    {/* include validation with required or other standard HTML validation rules */}
-                    <input {...register("exampleRequired", { required: true })} />
-                    {/* errors will return when field validation fails  */}
-                    {errors.exampleRequired && <span>This field is required</span>}
-                </div>
-                
-                
-                <div className="InicioSesionSubmit">
-                    <input id={"Submit" + claveId} type='submit' value="🐈"></input>
-                </div>
-            
-            </form>
-            <a href='/registrarse'>doble merequetengue REGISTRO</a>
+        
+      </form>
         </div>
     </>
   );
-}
+};
 
 export default TextoClave;
