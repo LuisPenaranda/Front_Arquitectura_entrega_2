@@ -8,6 +8,7 @@ module.exports.GET_PRODUCTOS_ALL = url_sub2 + `/Products/GetAll`;
 module.exports.GET_ORDEN_ALL = url_sub2 + `/Orders/GetAll`;
 module.exports.GET_ORDEN_ID = url_sub2 + `/Orders/GetById/`;//Agregar el id para buscar
 module.exports.POST_ORDEN = url_sub2 + `/Orders/Add`;
+module.exports.PUT_ORDEN = url_sub2 + `/Orders/Update`;
 
 //Usuario
 module.exports.GET_USUARIO_ID = url_sub2 + `/Users/GetById/`;//Agregar el id para buscar

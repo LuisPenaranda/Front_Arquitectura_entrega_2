@@ -55,6 +55,8 @@ const TextoClave = () => {
                 const base64EncodedString = btoa(myString);
                 window.sessionStorage.setItem('localToken', 'Basic ' + base64EncodedString);
                 window.sessionStorage.setItem('localSesion', true);
+                window.sessionStorage.setItem('UsernameSesion', response.data.username);
+                window.sessionStorage.setItem('IdSesion', response.data.id);
                 navigate("/");
             }
         )

@@ -26,6 +26,8 @@ import axios from "axios";
 import * as apiMethods from "../components/Apimethods.js";
 import promociones from "../images/Promociones.png";
 
+import emailjs from '@emailjs/browser';
+
 const drawerWidth = 240;
 
 const openedMixin = (theme) => ({
@@ -98,9 +100,7 @@ const SideBarNav = () => {
   const [open, setOpen] = React.useState(false);
 
   const[menu,setMenu] = useState([]);
-  const[carrito,setCarrito] = useState([
-    {text:'comida1', icon:<InboxIcon />, cantidad:1}
-  ]);
+  const[carrito,setCarrito] = useState([]);
 
   //esto se repite cada vez que cambia el tamaño de la imagen
   useEffect(() => {
@@ -115,7 +115,7 @@ const SideBarNav = () => {
            // or do whatever you need with the data
 
           productos.map(e => {
-            let row = {id: e.id, src: e.image, title:e.name, description: e.description, icon:<MailIcon />,cantidad:0}
+            let row = {id: e.id, src: e.image, title:e.name, description: e.description, icon:<MailIcon />,cantidad:0, value:e.value}
             menu_prov.push(row)
           })
           setMenu(menu_prov)
@@ -127,14 +127,6 @@ const SideBarNav = () => {
           // Handle any errors that occur during the request
           console.error('Error fetching products:', error);
         });
-
-      /*menu_prov = [
-          { id: 1, src: fantasy, title: 'comida1', icon:<InboxIcon />, cantidad: 0},
-          { id: 2, src: deku, title: 'comida2', icon:<MailIcon />, cantidad: 0},
-          { id: 3, src: fantasy, title: 'comida3', icon:<InboxIcon />, cantidad: 0},
-          { id: 4, src: deku, title: 'comida4', icon:<InboxIcon />, cantidad: 0},
-      ]*/
-      //setMenu(menu_prov)
       
     }
   });
@@ -148,67 +140,99 @@ const SideBarNav = () => {
   };
 
   const handleAdd = (element) => {
-    var carrito_prov = []
-    var respuesta_prov = []
-    var producto = [{text:element.title, icon:element.icon, cantidad: element.cantidad + 2, cambiado:false}]
+    var carrito_prov = carrito;
+    var producto = {id: element.id,src:element.src ,text:element.title, description:element.description, icon:element.icon, value:element.value, cantidad: element.cantidad + 1}
+    var remplazado = false
 
-    console.log(carrito)
-
-    if(carrito.length > 0){
-
-      producto.map(producto_element => {
-        carrito.map(element => {
-
-          if(element.text == producto_element.text && !producto_element.cambiado){
-            var cantidadTotal = element.cantidad + producto_element.cantidad
-            var row = {text:producto_element.text, icon: producto_element.icon, cantidad: cantidadTotal}
-            carrito_prov.push(row)
-            console.log(carrito_prov.length)
-            console.log(carrito_prov)
-            producto_element.cambiado = true
-          }
-        })
-      })
-
-      console.log(carrito_prov.length)
-
-      carrito.map(element => {
-        if(carrito_prov.length > 0){
-          console.log("entre if")
-          carrito_prov.map(carrito_element => {
-            if(element.text == carrito_element.text){
-              respuesta_prov.push(carrito_element)
-            }else{
-              respuesta_prov.push(element)
-            }
-          })
-        }
-        else{
-          console.log("entre else")
-          respuesta_prov.push(element)
-        }
-        
-      })
-
-    }
-    else{
-      producto.map(producto_element => {
-        var row = {text:producto_element.text, icon: producto_element.icon, cantidad: producto_element.cantidad}
-        carrito_prov.push(row)
-      })
-      
-    }
+    carrito_prov.map(carrito_element => {
+      if(carrito_element.text == producto.text){
+        carrito_element.cantidad = carrito_element.cantidad + producto.cantidad
+        remplazado = true
+      }
+    })
     
+    if(!remplazado){
+      var row = {id: producto.id,image:producto.src , text:producto.text, description:producto.description, value:producto.value, icon: producto.icon, cantidad: producto.cantidad}
+      carrito_prov.push(row)
+    }
+
+    setCarrito(carrito_prov)
     
-    console.log(respuesta_prov)
-    setCarrito(respuesta_prov)
   }
 
   const handlePagos = () =>{
-    //hacer PUT A SANTIAGO utilizar
-    //apimethods.POST_ORDEN
-    //Pero sin productos y sin cantidades
-    //Update de orden con cantidades y productos
+    axios.post(apiMethods.POST_ORDEN,
+      {
+        UserId: window.sessionStorage.getItem("IdSesion"),
+        Address: "Carrera 6 # 4 - 44",
+        UserName: window.sessionStorage.getItem("UsernameSesion"),
+        Status: "PEDIDO",
+        Products: [],
+        Quantities: ""
+      },
+      {
+        headers: {
+          Authorization: window.sessionStorage.getItem("localToken"),
+        },
+      },
+      
+    ).then(response => {
+
+      var a = ''
+      var productos_comprados = []
+
+      carrito.map(element =>{
+        a = a + element.id + ',' + element.cantidad + ':';
+        productos_comprados.push({
+          "id": element.id,
+          "name": element.text,
+          "description": element.description,
+          "value": element.value,
+          "image": element.image,
+        })
+      })
+
+      var jsonData = JSON.stringify(productos_comprados)
+
+      console.log(jsonData)
+
+      axios.put(apiMethods.PUT_ORDEN,
+        {
+          Id: response.data.value,
+          UserId: parseInt(window.sessionStorage.getItem("IdSesion")),
+          Address: "Carrera 6 # 4 - 44",
+          UserName: window.sessionStorage.getItem("UsernameSesion"),
+          Status: "PEDIDO",
+          Products: productos_comprados,
+          Quantities: a
+        },
+        {
+          headers: {
+            Authorization: window.sessionStorage.getItem("localToken"),
+          },
+        },
+      ).then(e =>{
+        
+        const emailParams = {
+          to_name:'santiago',
+          to_email: 'srodri0715@gmail.com',
+          subject: 'Tu recibo',
+          message: 'Merequetengue'
+        };
+
+        emailjs.init('onyCXSYB7HMml3vGP')
+
+        emailjs.send('service_dgqcw9e', 'template_ud7w9g7', emailParams)
+          .then((response) => {
+            console.log('Correo electrónico enviado:', response.text);
+            // Aquí puedes agregar lógica adicional después de enviar el correo electrónico
+          }, (error) => {
+            console.error('Error al enviar el correo electrónico:', error.text);
+            // Aquí puedes manejar los errores de envío del correo electrónico
+          });
+      })
+      
+    })
   }
 
   const handleMenuListItem = ( id ) =>{
@@ -369,6 +393,33 @@ const SideBarNav = () => {
                     {element.icon}
                   </ListItemIcon>
                   <ListItemText primary={element.text} sx={{ opacity: open ? 1 : 0 }} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+          <List>
+            {["Pagar"].map((text, index) => (
+              <ListItem key={text} disablePadding sx={{ display: "block" }}>
+                <ListItemButton
+                  sx={{
+                    minHeight: 48,
+                    justifyContent: open ? "initial" : "center",
+                    px: 2.5,
+                  }}
+                  onClick={handlePagos}
+                >
+                  <Typography
+                    variant="h6"
+                    noWrap
+                    component="div"
+                    sx={{
+                      flexGrow: 1,
+                      display: { xs: "none", sm: "block", color: "#000000" },
+                      opacity: open ? 1 : 0,
+                    }}
+                  >
+                    Pagar
+                  </Typography>
                 </ListItemButton>
               </ListItem>
             ))}
